@@ -7,6 +7,8 @@ import type { RawJob } from '../types.js';
 interface ScrapeOptions {
   query: string;
   limit: number;
+  /** Force a visible browser — often required to pass Naukri's bot check. */
+  headed?: boolean;
 }
 
 /** Shape returned from the in-page DOM extraction. */
@@ -28,7 +30,7 @@ interface CardData {
  * often, so if a run returns 0 jobs we dump a screenshot + HTML to help
  * re-tune them rather than failing silently.
  */
-export async function scrapeNaukri({ query, limit }: ScrapeOptions): Promise<RawJob[]> {
+export async function scrapeNaukri({ query, limit, headed }: ScrapeOptions): Promise<RawJob[]> {
   if (!hasSession('naukri')) {
     throw new AppError(
       400,
@@ -39,9 +41,18 @@ export async function scrapeNaukri({ query, limit }: ScrapeOptions): Promise<Raw
   const slug = query.trim().toLowerCase().replace(/\s+/g, '-');
   const searchUrl = `https://www.naukri.com/${slug}-jobs`;
 
-  const { context, close } = await launchContext({ site: 'naukri' });
+  const { context, close } = await launchContext({ site: 'naukri', headed });
   try {
     const page = await context.newPage();
+
+    // When run under tsx/esbuild, page.evaluate callbacks are transformed with
+    // a `__name` helper that doesn't exist in the browser. Define a no-op shim
+    // in the page context so those references resolve. (Passed as a string so
+    // esbuild doesn't transform this line too.)
+    await page.addInitScript(
+      'window.__name = window.__name || function (fn) { return fn; };',
+    );
+
     await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: 45_000 });
 
     // If the session expired, Naukri bounces us to the login page.

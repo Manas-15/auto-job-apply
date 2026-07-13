@@ -21,7 +21,8 @@
     "db:down": "docker compose down",
     "db:migrate": "npm run db:migrate --workspace @aja/api",
     "db:generate": "npm run db:generate --workspace @aja/api",
-    "db:studio": "npm run db:studio --workspace @aja/api"
+    "db:studio": "npm run db:studio --workspace @aja/api",
+    "naukri:login": "npm run naukri:login --workspace @aja/api"
   },
   "license": "MIT"
 }

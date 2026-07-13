@@ -48,7 +48,9 @@ jobsRouter.post(
   asyncHandler(async (req, res) => {
     const { query, limit } = naukriSchema.parse(req.body ?? {});
     const q = query ?? env.JOB_FINDER_QUERY;
-    const jobs = await scrapeNaukri({ query: q, limit: limit ?? 25 });
+    // Headed is required — Naukri's Akamai bot check blocks headless browsers.
+    // A visible window opens on the machine running the API (your desktop).
+    const jobs = await scrapeNaukri({ query: q, limit: limit ?? 25, headed: true });
     const { fetched, created, updated } = await ingestRawJobs(jobs);
     res.json({ source: 'naukri', query: q, fetched, created, updated });
   }),
