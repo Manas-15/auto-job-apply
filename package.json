@@ -1,0 +1,25 @@
+{
+  "name": "auto-job-apply",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI Career Assistant — finds jobs, analyzes JDs, tailors resumes, scores ATS fit, generates cover letters, and (optionally) applies.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev:api": "npm run dev --workspace @aja/api",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "db:up": "docker compose up -d postgres redis",
+    "db:down": "docker compose down",
+    "db:migrate": "npm run db:migrate --workspace @aja/api",
+    "db:generate": "npm run db:generate --workspace @aja/api",
+    "db:studio": "npm run db:studio --workspace @aja/api"
+  },
+  "license": "MIT"
+}

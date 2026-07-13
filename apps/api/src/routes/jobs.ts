@@ -1,0 +1,77 @@
+import { Router } from 'express';
+import { z } from 'zod';
+import { asyncHandler } from '../middleware/errorHandler.js';
+import { prisma } from '../lib/prisma.js';
+import { NotFoundError } from '../lib/errors.js';
+import { analyzeJob } from '../modules/analyzer/service.js';
+
+export const jobsRouter = Router();
+
+const createJobSchema = z.object({
+  title: z.string().min(1),
+  descriptionRaw: z.string().min(1),
+  url: z.string().url().optional(),
+  location: z.string().optional(),
+  salaryText: z.string().optional(),
+  source: z
+    .enum(['LINKEDIN', 'NAUKRI', 'INDEED', 'INSTAHYRE', 'WELLFOUND', 'COMPANY_CAREERS', 'OTHER'])
+    .default('OTHER'),
+  externalId: z.string().optional(),
+  companyName: z.string().optional(),
+});
+
+// Create a job (manual entry now; the Job Finder module will feed this later).
+jobsRouter.post(
+  '/',
+  asyncHandler(async (req, res) => {
+    const body = createJobSchema.parse(req.body);
+    const { companyName, ...rest } = body;
+
+    const company = companyName
+      ? await prisma.company.upsert({
+          where: { name: companyName },
+          create: { name: companyName },
+          update: {},
+        })
+      : null;
+
+    const job = await prisma.job.create({
+      data: { ...rest, companyId: company?.id ?? null },
+    });
+    res.status(201).json(job);
+  }),
+);
+
+// List jobs (most recent first).
+jobsRouter.get(
+  '/',
+  asyncHandler(async (_req, res) => {
+    const jobs = await prisma.job.findMany({
+      orderBy: { scrapedAt: 'desc' },
+      take: 100,
+      include: { analysis: true, company: true },
+    });
+    res.json(jobs);
+  }),
+);
+
+jobsRouter.get(
+  '/:id',
+  asyncHandler(async (req, res) => {
+    const job = await prisma.job.findUnique({
+      where: { id: req.params.id },
+      include: { analysis: true, company: true, atsScores: true },
+    });
+    if (!job) throw new NotFoundError('Job');
+    res.json(job);
+  }),
+);
+
+// Run the AI Job Analyzer against this job.
+jobsRouter.post(
+  '/:id/analyze',
+  asyncHandler(async (req, res) => {
+    const analysis = await analyzeJob(String(req.params.id));
+    res.json(analysis);
+  }),
+);
