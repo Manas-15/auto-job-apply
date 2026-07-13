@@ -101,6 +101,33 @@ curl -X POST localhost:4000/api/ats/score -H 'Content-Type: application/json' \
   -d '{"resumeId":"seed-master-resume","jobId":"seed-sample-job"}'
 ```
 
+## Naukri scraping (your own account, session-based)
+
+Scrapes Naukri using **your** login — your password is never typed into this
+app, stored in code, or committed. You sign in yourself in a real browser
+window; only the resulting session cookies are saved locally to
+`browser-sessions/naukri.json` (gitignored).
+
+```bash
+# 1. One-time login — opens a browser window; sign in + solve any CAPTCHA,
+#    then press Enter in the terminal. Session is saved locally.
+npm run naukri:login --workspace @aja/api
+
+# 2. Scrape your matching jobs into the dashboard (reuses the session)
+curl -X POST localhost:4000/api/jobs/scrape/naukri \
+  -H 'Content-Type: application/json' -d '{"query":"react developer","limit":25}'
+```
+
+Re-run the login if the session expires. Scraped jobs land in the same DB and
+show up in the dashboard alongside the free sources.
+
+> ⚠️ **Terms of Service:** Naukri/LinkedIn prohibit automated access in their
+> ToS; automating your own account carries a risk of restriction. This runs
+> locally under your account, rate-limited and human-in-the-loop
+> (`AUTO_SUBMIT=false`), but the risk is yours to weigh. Naukri changes its
+> markup often — if a run returns 0 jobs, a debug screenshot is saved to
+> `browser-sessions/naukri-debug.png` to help re-tune the selectors.
+
 ## AI providers
 
 Set `AI_PROVIDER` in `.env` to switch the model backend. All four implement
@@ -119,6 +146,7 @@ the same interface, so the rest of the app is unchanged:
 |--------|----------------------------|----------------------------------------------|
 | GET    | `/health`                  | Service + DB + AI-provider status            |
 | POST   | `/api/jobs/discover`       | Job Finder: pull real jobs from free sources |
+| POST   | `/api/jobs/scrape/naukri`  | Scrape Naukri via your saved login session   |
 | GET    | `/api/jobs/sources`        | List available job sources                   |
 | POST   | `/api/jobs`                | Create a job manually (paste a JD)           |
 | GET    | `/api/jobs`                | List recent jobs                             |
@@ -134,8 +162,9 @@ Mapped to the module plan:
 - [x] **M2** AI Job Analyzer — JD → structured extraction
 - [x] **M4** ATS Score — resume vs JD keyword match
 - [x] **M9** Dashboard (basic) — overview, jobs, job detail, ATS tool
-- [x] **M1** Job Finder (free sources) — Remotive + RemoteOK ingest, dedupe, optional BullMQ scheduler
-  - [ ] gated sources (LinkedIn/Naukri/Indeed) behind credentials; preference-driven filters
+- [x] **M1** Job Finder (free sources) — Remotive + RemoteOK + Arbeitnow + Jobicy + WeWorkRemotely
+  - [x] **Naukri** — session-based Playwright scraper (you log in yourself; no password stored)
+  - [ ] LinkedIn Easy Apply (where permitted); preference-driven match filtering
 - [ ] **M3** Resume Optimizer — AI-tailored, ATS-optimized resume variants
 - [ ] **M5** Cover Letter Generator
 - [ ] **M6** Application Engine — Playwright form fill + approval gate

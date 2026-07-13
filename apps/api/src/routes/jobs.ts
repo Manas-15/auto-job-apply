@@ -4,8 +4,9 @@ import { asyncHandler } from '../middleware/errorHandler.js';
 import { prisma } from '../lib/prisma.js';
 import { NotFoundError } from '../lib/errors.js';
 import { analyzeJob } from '../modules/analyzer/service.js';
-import { discoverJobs } from '../modules/finder/service.js';
+import { discoverJobs, ingestRawJobs } from '../modules/finder/service.js';
 import { defaultSourceKeys } from '../modules/finder/sources/index.js';
+import { scrapeNaukri } from '../modules/finder/naukri/scraper.js';
 import { env } from '../config/env.js';
 
 export const jobsRouter = Router();
@@ -34,6 +35,24 @@ jobsRouter.post(
 jobsRouter.get('/sources', (_req, res) => {
   res.json({ sources: defaultSourceKeys });
 });
+
+// Scrape Naukri using your saved login session (run `npm run naukri:login` first).
+// Runs a real browser locally under your account; keeps everything in the same DB.
+const naukriSchema = z.object({
+  query: z.string().min(1).optional(),
+  limit: z.number().int().min(1).max(50).optional(),
+});
+
+jobsRouter.post(
+  '/scrape/naukri',
+  asyncHandler(async (req, res) => {
+    const { query, limit } = naukriSchema.parse(req.body ?? {});
+    const q = query ?? env.JOB_FINDER_QUERY;
+    const jobs = await scrapeNaukri({ query: q, limit: limit ?? 25 });
+    const { fetched, created, updated } = await ingestRawJobs(jobs);
+    res.json({ source: 'naukri', query: q, fetched, created, updated });
+  }),
+);
 
 const createJobSchema = z.object({
   title: z.string().min(1),

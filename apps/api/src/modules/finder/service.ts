@@ -45,9 +45,23 @@ export async function discoverJobs(opts: DiscoverOptions): Promise<DiscoverResul
     }),
   );
 
-  // Dedupe within this batch by externalId (sources can overlap).
+  const { fetched, created, updated } = await ingestRawJobs(all);
+
+  const result: DiscoverResult = { query: opts.query, fetched, created, updated, perSource };
+  logger.info(result, 'Job discovery complete');
+  return result;
+}
+
+/**
+ * Dedupe a batch of raw jobs (by externalId) and upsert them, matching on
+ * (source, externalId) so re-runs update instead of duplicating. Shared by
+ * the fetch-based sources and the Playwright scrapers (Naukri, etc.).
+ */
+export async function ingestRawJobs(
+  jobs: RawJob[],
+): Promise<{ fetched: number; created: number; updated: number }> {
   const seen = new Set<string>();
-  const unique = all.filter((j) => {
+  const unique = jobs.filter((j) => {
     if (seen.has(j.externalId)) return false;
     seen.add(j.externalId);
     return true;
@@ -92,13 +106,5 @@ export async function discoverJobs(opts: DiscoverOptions): Promise<DiscoverResul
     }
   }
 
-  const result: DiscoverResult = {
-    query: opts.query,
-    fetched: unique.length,
-    created,
-    updated,
-    perSource,
-  };
-  logger.info(result, 'Job discovery complete');
-  return result;
+  return { fetched: unique.length, created, updated };
 }
