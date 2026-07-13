@@ -4,6 +4,10 @@
 FROM node:20-slim AS build
 WORKDIR /app
 
+# openssl so `prisma generate` detects the correct engine target (debian-openssl-3.0.x).
+RUN apt-get update && apt-get install -y --no-install-recommends openssl \
+  && rm -rf /var/lib/apt/lists/*
+
 # Install workspace deps from the root lockfile. Skip the Playwright browser
 # download — the cloud never scrapes Naukri (headed + your session only).
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
