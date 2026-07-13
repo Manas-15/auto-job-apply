@@ -17,7 +17,16 @@
       "Skill(claude-api)",
       "Skill(claude-api:*)",
       "Bash(npx playwright *)",
-      "Bash(node --input-type=module -e ' *)"
+      "Bash(node --input-type=module -e ' *)",
+      "Bash(dotenv -e ../../.env -- tsx scripts/naukri-test.ts \"react developer\")",
+      "Bash(../../node_modules/.bin/dotenv -e ../../.env -- tsx scripts/naukri-test.ts \"react developer\")",
+      "Bash(../../node_modules/.bin/dotenv -e ../../.env -- ../../node_modules/.bin/tsx scripts/naukri-test.ts \"react developer\")",
+      "Bash(../../node_modules/.bin/dotenv -e ../../.env -- ../../node_modules/.bin/tsx scripts/naukri-test.ts \"react developer\" --headed)",
+      "Bash(curl -s -X POST localhost:4000/api/jobs/scrape/naukri -H 'Content-Type: application/json' -d '{\"query\":\"react developer\",\"limit\":15}')",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); n=[j for j in d if j['source']=='NAUKRI']; print\\('NAUKRI jobs stored:', len\\(n\\)\\); [print\\(' -', j['title'],'@',\\(j.get\\('company'\\) or {}\\).get\\('name'\\),'|',j.get\\('location'\\)\\) for j in n[:6]]\")",
+      "Bash(../../node_modules/.bin/dotenv -e ../../.env -- ../../node_modules/.bin/tsx scripts/naukri-probe.ts)",
+      "Bash(../../node_modules/.bin/dotenv -e ../../.env -- ../../node_modules/.bin/tsx -e ' *)",
+      "Bash(../../node_modules/.bin/dotenv -e ../../.env -- ../../node_modules/.bin/tsx scripts/naukri-test.ts \"react developer\" 3)"
     ]
   }
 }
