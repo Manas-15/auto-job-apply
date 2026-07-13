@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { api, type AtsScore, type Job } from '@/lib/api';
+import { api, type AtsScore, type Job, type OptimizeResponse } from '@/lib/api';
 import { Badge, Button, Card, ScoreRing } from '@/components/ui';
 
 export default function JobDetailPage() {
@@ -18,6 +18,10 @@ export default function JobDetailPage() {
   const [scoring, setScoring] = useState(false);
   const [scoreErr, setScoreErr] = useState<string | null>(null);
 
+  const [optimizing, setOptimizing] = useState(false);
+  const [opt, setOpt] = useState<OptimizeResponse | null>(null);
+  const [optErr, setOptErr] = useState<string | null>(null);
+
   const load = () => {
     api
       .getJob(id)
@@ -25,6 +29,29 @@ export default function JobDetailPage() {
       .catch((e) => setError(e.message));
   };
   useEffect(load, [id]);
+
+  // Default the resume to your saved master résumé (falls back to the seed).
+  useEffect(() => {
+    api
+      .listResumes()
+      .then((rs) => {
+        const master = rs.find((r) => r.isMaster);
+        if (master) setResumeId(master.id);
+      })
+      .catch(() => undefined);
+  }, []);
+
+  const optimize = async () => {
+    setOptimizing(true);
+    setOptErr(null);
+    try {
+      setOpt(await api.optimizeResume(resumeId, id));
+    } catch (e) {
+      setOptErr((e as Error).message);
+    } finally {
+      setOptimizing(false);
+    }
+  };
 
   const analyze = async () => {
     setAnalyzing(true);
@@ -170,6 +197,85 @@ export default function JobDetailPage() {
                   items={score.missingKeywords}
                   tone="bad"
                 />
+              </div>
+            )}
+          </Card>
+
+          {/* Resume Optimizer (M3) */}
+          <Card className="space-y-4 p-5">
+            <h2 className="font-medium">Tailor résumé</h2>
+            <p className="text-xs text-[var(--color-muted)]">
+              AI rewrites your master résumé for this job to lift the ATS score — using only your
+              real experience. Requires an analysis first.
+            </p>
+            <Button onClick={optimize} disabled={optimizing || !a}>
+              {optimizing ? 'Tailoring…' : 'Tailor résumé for this job'}
+            </Button>
+            {optErr && (
+              <p className="text-sm text-[var(--color-bad)]">
+                {optErr}
+                {optErr.includes('API_KEY') && (
+                  <span className="text-[var(--color-muted)]"> — set a Gemini key to enable AI.</span>
+                )}
+                {optErr.includes('no text') && (
+                  <span className="text-[var(--color-muted)]">
+                    {' '}
+                    — add your master résumé on the Résumés tab first.
+                  </span>
+                )}
+              </p>
+            )}
+            {opt && (
+              <div className="space-y-4 border-t border-[var(--color-border)] pt-4">
+                <div className="flex items-center justify-center gap-3">
+                  <div className="text-center">
+                    <ScoreRing score={opt.atsBefore} size={72} />
+                    <p className="mt-1 text-[10px] text-[var(--color-muted)]">before</p>
+                  </div>
+                  <span className="text-[var(--color-muted)]">→</span>
+                  <div className="text-center">
+                    <ScoreRing score={opt.atsAfter} size={92} />
+                    <p className="mt-1 text-[10px] text-[var(--color-muted)]">after</p>
+                  </div>
+                </div>
+                <KeywordGroup
+                  title={`Surfaced keywords (${opt.addedKeywords.length})`}
+                  items={opt.addedKeywords}
+                  tone="good"
+                />
+                {opt.gaps.length > 0 && (
+                  <div>
+                    <p className="mb-2 text-xs font-medium text-[var(--color-muted)]">
+                      Gaps (not added — you don&apos;t have these)
+                    </p>
+                    <ul className="space-y-1 text-xs">
+                      {opt.gaps.map((g, i) => (
+                        <li key={i}>
+                          <span className="text-[var(--color-bad)]">{g.keyword}</span>
+                          <span className="text-[var(--color-muted)]"> — {g.note}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {opt.changesSummary.length > 0 && (
+                  <div>
+                    <p className="mb-2 text-xs font-medium text-[var(--color-muted)]">Changes</p>
+                    <ul className="list-disc space-y-1 pl-5 text-xs text-[var(--color-muted)]">
+                      {opt.changesSummary.map((c, i) => (
+                        <li key={i}>{c}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                <div>
+                  <p className="mb-2 text-xs font-medium text-[var(--color-muted)]">
+                    Tailored résumé
+                  </p>
+                  <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded-lg bg-[var(--color-bg)] p-3 text-xs">
+                    {opt.tailoredText}
+                  </pre>
+                </div>
               </div>
             )}
           </Card>

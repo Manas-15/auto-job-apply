@@ -72,6 +72,27 @@ export interface DiscoverResult {
   perSource: { source: string; fetched: number; error?: string }[];
 }
 
+export interface Resume {
+  id: string;
+  label: string;
+  isMaster: boolean;
+  rawText: string | null;
+  tailoredForJobId: string | null;
+  tailoredForJob?: { id: string; title: string } | null;
+  createdAt: string;
+}
+
+export interface OptimizeResponse {
+  tailoredResumeId: string;
+  tailoredText: string;
+  changesSummary: string[];
+  addedKeywords: string[];
+  gaps: { keyword: string; note: string }[];
+  atsBefore: number;
+  atsAfter: number;
+  model: string;
+}
+
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${apiUrl()}${path}`, {
     ...init,
@@ -123,4 +144,12 @@ export const api = {
     niceToHave: string[];
     ats: string[];
   }) => req<AtsPreview>('/api/ats/preview', { method: 'POST', body: JSON.stringify(data) }),
+  listResumes: () => req<Resume[]>('/api/resumes'),
+  saveMasterResume: (data: { rawText: string; label?: string }) =>
+    req<Resume>('/api/resumes/master', { method: 'POST', body: JSON.stringify(data) }),
+  optimizeResume: (resumeId: string, jobId: string) =>
+    req<OptimizeResponse>('/api/resumes/optimize', {
+      method: 'POST',
+      body: JSON.stringify({ resumeId, jobId }),
+    }),
 };
