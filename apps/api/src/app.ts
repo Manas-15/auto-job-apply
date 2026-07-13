@@ -1,8 +1,14 @@
 import cors from 'cors';
-import express from 'express';
-import helmet from 'helmet';
+import express, { type RequestHandler } from 'express';
+import helmetFactory from 'helmet';
 import { pinoHttp } from 'pino-http';
 import { corsOrigins, env } from './config/env.js';
+
+// helmet's default export is a middleware factory at runtime, but some
+// TypeScript/helmet version combinations mis-type it as a non-callable
+// namespace (breaking `tsc` on newer TS). Assert the call signature so the
+// build is robust everywhere.
+const helmet = helmetFactory as unknown as (options?: Record<string, unknown>) => RequestHandler;
 import { logger } from './lib/logger.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { atsRouter } from './routes/ats.js';
