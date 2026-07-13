@@ -13,9 +13,12 @@ export function createApp() {
   const app = express();
 
   app.use(helmet());
-  // In development, reflect any origin so the dashboard works over localhost
-  // AND your LAN IP (e.g. 192.168.x.x:3000). In production, use the allowlist.
-  app.use(cors({ origin: env.NODE_ENV === 'development' ? true : corsOrigins }));
+  // Reflect any origin in development (localhost + LAN IP), or in production
+  // when CORS_ORIGINS is "*" (convenient for a self-hosted single-server deploy
+  // where the public origin isn't known ahead of time). Otherwise use the
+  // explicit allowlist.
+  const allowAnyOrigin = env.NODE_ENV === 'development' || corsOrigins.includes('*');
+  app.use(cors({ origin: allowAnyOrigin ? true : corsOrigins }));
   app.use(express.json({ limit: '2mb' }));
   app.use(pinoHttp({ logger, autoLogging: { ignore: (req) => req.url === '/health' } }));
 

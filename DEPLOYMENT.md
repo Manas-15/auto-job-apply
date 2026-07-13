@@ -33,10 +33,21 @@ background workers, or a headed browser.
 
 ---
 
+## Two ways to deploy
+
+- **Option A — Managed (Vercel + Railway):** best for auto-deploy-on-push and
+  zero server maintenance. Steps 1–5 below.
+- **Option B — Self-hosted, one server (Docker Compose):** run the *entire*
+  stack (frontend + backend + Postgres + Redis) live on a single VPS/VM with
+  one command. Jump to [§6](#6-self-hosted-full-stack-with-docker).
+
+Either way, **Naukri scraping stays on your local machine** (§5).
+
 ## Prerequisites
 
 - GitHub repo (you have one: `Manas-15/auto-job-apply`)
-- Accounts: [Vercel](https://vercel.com), a backend host ([Railway](https://railway.app) recommended), [Neon](https://neon.tech), [Upstash](https://upstash.com)
+- **Option A:** [Vercel](https://vercel.com), [Railway](https://railway.app), [Neon](https://neon.tech), [Upstash](https://upstash.com)
+- **Option B:** any server with Docker + Docker Compose
 
 ---
 
@@ -134,6 +145,38 @@ jobs you scrape locally land directly in the production database and show up in
 the deployed dashboard. Otherwise they stay in your local Postgres.
 
 ---
+
+## 6. Self-hosted full stack with Docker
+
+Run everything live on one server — no Vercel/Railway/Neon/Upstash accounts
+needed. Uses [docker-compose.prod.yml](docker-compose.prod.yml), which builds
+both apps ([apps/api/Dockerfile](apps/api/Dockerfile),
+[apps/web/Dockerfile](apps/web/Dockerfile)) and runs Postgres + Redis
+alongside them.
+
+```bash
+# on your server (with the repo cloned)
+cp .env.prod.example .env.prod
+#   → set JWT_SECRET and your AI key (GEMINI_API_KEY is free)
+#   → optionally set NEXT_PUBLIC_API_URL to http://<server-ip>:4000 or a domain
+
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+```
+
+- Frontend → `http://<server>:3000`, backend → `http://<server>:4000`.
+- Migrations run automatically on backend start (`prisma migrate deploy`).
+- `CORS_ORIGINS=*` (the default) reflects any origin — fine for a single-owner
+  box; set it to your real frontend URL for a public deployment.
+- Put Nginx/Caddy in front for TLS + a clean domain (recommended for anything
+  public). If you serve the frontend behind a domain, set `NEXT_PUBLIC_API_URL`
+  to the backend's public URL and rebuild the `web` image.
+
+Update a running deploy:
+
+```bash
+git pull
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+```
 
 ## Environment variables
 
