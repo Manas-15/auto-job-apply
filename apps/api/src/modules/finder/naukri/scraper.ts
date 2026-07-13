@@ -2,6 +2,7 @@ import path from 'node:path';
 import { AppError } from '../../../lib/errors.js';
 import { logger } from '../../../lib/logger.js';
 import { hasSession, launchContext } from '../../../browser/session.js';
+import { htmlToText } from '../html.js';
 import type { RawJob } from '../types.js';
 
 interface ScrapeOptions {
@@ -132,9 +133,81 @@ export async function scrapeNaukri({ query, limit, headed }: ScrapeOptions): Pro
       ];
     });
 
+    // Enrich each job from its detail page: the listing only has a snippet,
+    // but the detail page embeds a full JobPosting JSON-LD (description +
+    // datePosted + salary). Sequential + small delays to stay polite.
+    for (const job of jobs) {
+      try {
+        const detail = await fetchDetail(page, job.url);
+        if (detail.description) job.descriptionRaw = detail.description;
+        if (detail.postedAt) job.postedAt = detail.postedAt;
+        if (!job.salaryText && detail.salary) job.salaryText = detail.salary;
+        await page.waitForTimeout(1000); // be gentle
+      } catch (err) {
+        logger.warn({ url: job.url, err: (err as Error).message }, 'Naukri detail enrich failed');
+      }
+    }
+
     logger.info({ query, found: jobs.length }, 'Naukri scrape complete');
     return jobs;
   } finally {
     await close();
   }
+}
+
+interface JobPostingLd {
+  '@type'?: string | string[];
+  description?: string;
+  datePosted?: string;
+  baseSalary?: { value?: { value?: string | number; minValue?: number; maxValue?: number } };
+}
+
+/** Open a Naukri job detail page and pull its JobPosting JSON-LD. */
+async function fetchDetail(
+  page: import('playwright').Page,
+  url: string,
+): Promise<{ description: string | null; postedAt: Date | null; salary: string | null }> {
+  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45_000 });
+  await page
+    .waitForSelector('script[type="application/ld+json"]', { timeout: 15_000 })
+    .catch(() => undefined);
+
+  const blobs = await page.evaluate(() =>
+    Array.from(document.querySelectorAll('script[type="application/ld+json"]')).map(
+      (s) => s.textContent ?? '',
+    ),
+  );
+
+  let posting: JobPostingLd | null = null;
+  for (const raw of blobs) {
+    try {
+      const parsed = JSON.parse(raw) as JobPostingLd;
+      const t = parsed['@type'];
+      const isJob = Array.isArray(t) ? t.includes('JobPosting') : t === 'JobPosting';
+      if (isJob) {
+        posting = parsed;
+        break;
+      }
+    } catch {
+      /* not valid JSON — skip */
+    }
+  }
+
+  if (!posting) return { description: null, postedAt: null, salary: null };
+
+  const description = posting.description ? htmlToText(posting.description) : null;
+  const postedAt = posting.datePosted ? new Date(posting.datePosted) : null;
+  const sv = posting.baseSalary?.value;
+  const salary =
+    sv?.minValue && sv?.maxValue
+      ? `${sv.minValue}–${sv.maxValue}`
+      : sv?.value
+        ? String(sv.value)
+        : null;
+
+  return {
+    description,
+    postedAt: postedAt && !Number.isNaN(postedAt.getTime()) ? postedAt : null,
+    salary,
+  };
 }
