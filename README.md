@@ -43,6 +43,12 @@ packages/         (planned) shared types
 docker-compose.yml  Postgres + Redis
 ```
 
+## Deployment
+
+Frontend → Vercel, backend → Railway/Render, DB/Redis → Neon/Upstash, and the
+Naukri scraper stays local (it can't run in the cloud). Full guide + CI/CD
+setup: **[DEPLOYMENT.md](DEPLOYMENT.md)**.
+
 ## Prerequisites
 
 - Node.js 20+
