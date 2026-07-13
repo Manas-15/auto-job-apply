@@ -107,6 +107,11 @@ export const api = {
     req<JobAnalysis>(`/api/jobs/${id}/analyze`, { method: 'POST' }),
   discoverJobs: (data: { query?: string; limit?: number }) =>
     req<DiscoverResult>('/api/jobs/discover', { method: 'POST', body: JSON.stringify(data) }),
+  scrapeNaukri: (data: { query?: string; limit?: number }) =>
+    req<{ source: string; query: string; fetched: number; created: number; updated: number }>(
+      '/api/jobs/scrape/naukri',
+      { method: 'POST', body: JSON.stringify(data) },
+    ),
   scoreResume: (resumeId: string, jobId: string) =>
     req<AtsScore>('/api/ats/score', {
       method: 'POST',

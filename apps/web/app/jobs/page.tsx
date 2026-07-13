@@ -14,6 +14,10 @@ export default function JobsPage() {
   const [discovering, setDiscovering] = useState(false);
   const [discoverMsg, setDiscoverMsg] = useState<string | null>(null);
 
+  const [naukriBusy, setNaukriBusy] = useState(false);
+  const [naukriMsg, setNaukriMsg] = useState<string | null>(null);
+  const [naukriErr, setNaukriErr] = useState<string | null>(null);
+
   const load = () => {
     api
       .listJobs()
@@ -37,6 +41,23 @@ export default function JobsPage() {
       setError((e as Error).message);
     } finally {
       setDiscovering(false);
+    }
+  };
+
+  const scrapeNaukri = async () => {
+    setNaukriBusy(true);
+    setNaukriMsg(null);
+    setNaukriErr(null);
+    try {
+      const r = await api.scrapeNaukri({ query, limit: 25 });
+      setNaukriMsg(
+        `Naukri: ${r.fetched} jobs for “${r.query}” — ${r.created} new, ${r.updated} updated.`,
+      );
+      load();
+    } catch (e) {
+      setNaukriErr((e as Error).message);
+    } finally {
+      setNaukriBusy(false);
     }
   };
 
@@ -72,6 +93,39 @@ export default function JobsPage() {
         </span>
         {discoverMsg && (
           <span className="w-full text-xs text-[var(--color-good)]">{discoverMsg}</span>
+        )}
+      </Card>
+
+      {/* Naukri (M1) — session-based scrape of your own account */}
+      <Card className="flex flex-wrap items-center gap-3 p-4">
+        <span className="text-sm font-medium">Scrape Naukri</span>
+        <span className="flex-1 text-xs text-[var(--color-muted)]">
+          Uses the query above and your saved Naukri login session.
+        </span>
+        <Button variant="ghost" onClick={scrapeNaukri} disabled={naukriBusy || !query.trim()}>
+          {naukriBusy ? 'Scraping…' : 'Scrape Naukri'}
+        </Button>
+        <span className="w-full text-xs text-[var(--color-muted)]">
+          Run{' '}
+          <code className="rounded bg-[var(--color-surface-2)] px-1">
+            npm run naukri:login --workspace @aja/api
+          </code>{' '}
+          once to sign in. Your password is never stored. Automating your account may violate
+          Naukri&apos;s ToS.
+        </span>
+        {naukriMsg && (
+          <span className="w-full text-xs text-[var(--color-good)]">{naukriMsg}</span>
+        )}
+        {naukriErr && (
+          <span className="w-full text-xs text-[var(--color-bad)]">
+            {naukriErr}
+            {naukriErr.includes('session') && (
+              <span className="text-[var(--color-muted)]">
+                {' '}
+                — run the login command above first.
+              </span>
+            )}
+          </span>
         )}
       </Card>
 
