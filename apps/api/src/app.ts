@@ -8,6 +8,7 @@ import { errorHandler } from './middleware/errorHandler.js';
 import { atsRouter } from './routes/ats.js';
 import { healthRouter } from './routes/health.js';
 import { jobsRouter } from './routes/jobs.js';
+import { resumesRouter } from './routes/resumes.js';
 
 export function createApp() {
   const app = express();
@@ -44,6 +45,7 @@ export function createApp() {
   app.use('/health', healthRouter);
   app.use('/api/jobs', jobsRouter);
   app.use('/api/ats', atsRouter);
+  app.use('/api/resumes', resumesRouter);
 
   app.use((_req, res) => res.status(404).json({ error: 'NotFound', message: 'Route not found' }));
   app.use(errorHandler);
