@@ -18,6 +18,12 @@ export default function JobsPage() {
   const [naukriMsg, setNaukriMsg] = useState<string | null>(null);
   const [naukriErr, setNaukriErr] = useState<string | null>(null);
 
+  // Location filter — pre-filled with the user's target cities.
+  const [locFilter, setLocFilter] = useState(
+    'Bengaluru, Bangalore, Mumbai, Pune, Hyderabad, Kolkata, Bhubaneswar',
+  );
+  const [locOn, setLocOn] = useState(true);
+
   const load = () => {
     api
       .listJobs()
@@ -60,6 +66,17 @@ export default function JobsPage() {
       setNaukriBusy(false);
     }
   };
+
+  const cities = locFilter
+    .split(',')
+    .map((c) => c.trim().toLowerCase())
+    .filter(Boolean);
+  const visibleJobs = (jobs ?? []).filter((j) => {
+    if (!locOn || cities.length === 0) return true;
+    const loc = (j.location ?? '').toLowerCase();
+    if (!loc) return false;
+    return cities.some((c) => loc.includes(c));
+  });
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -140,13 +157,43 @@ export default function JobsPage() {
         />
       )}
 
+      {/* Location filter */}
+      {jobs && jobs.length > 0 && (
+        <Card className="flex flex-wrap items-center gap-3 p-3">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={locOn}
+              onChange={(e) => setLocOn(e.target.checked)}
+              className="accent-[var(--color-brand)]"
+            />
+            Filter by location
+          </label>
+          <input
+            className="min-w-64 flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-1.5 text-sm outline-none focus:border-[var(--color-brand)] disabled:opacity-50"
+            value={locFilter}
+            onChange={(e) => setLocFilter(e.target.value)}
+            disabled={!locOn}
+            placeholder="Comma-separated cities"
+          />
+          <span className="text-xs text-[var(--color-muted)]">
+            {visibleJobs.length} of {jobs.length} shown
+          </span>
+        </Card>
+      )}
+
       {jobs === null ? (
         <p className="text-sm text-[var(--color-muted)]">Loading…</p>
       ) : jobs.length === 0 ? (
         <EmptyState title="No jobs yet" hint="Click “Add job” to paste a description." />
+      ) : visibleJobs.length === 0 ? (
+        <EmptyState
+          title="No jobs in those locations"
+          hint="Adjust or turn off the location filter above."
+        />
       ) : (
         <div className="grid gap-3">
-          {jobs.map((j) => (
+          {visibleJobs.map((j) => (
             <Link key={j.id} href={`/jobs/${j.id}`}>
               <Card className="flex items-center justify-between gap-4 p-4 transition hover:border-[var(--color-brand)]">
                 <div className="min-w-0">
