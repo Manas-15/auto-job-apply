@@ -1,4 +1,18 @@
-export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+/**
+ * Where the backend lives. If NEXT_PUBLIC_API_URL is set, use it.
+ * Otherwise derive it from the host you're viewing the dashboard on, so
+ * opening the app via a LAN IP (e.g. 192.168.x.x:3000) talks to that same
+ * host's API on :4000 instead of a hardcoded localhost.
+ */
+export function apiUrl(): string {
+  if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
+  if (typeof window !== 'undefined') {
+    return `${window.location.protocol}//${window.location.hostname}:4000`;
+  }
+  return 'http://localhost:4000';
+}
+
+export const API_URL = apiUrl();
 
 export interface JobAnalysis {
   id: string;
@@ -59,7 +73,7 @@ export interface DiscoverResult {
 }
 
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
+  const res = await fetch(`${apiUrl()}${path}`, {
     ...init,
     headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
     cache: 'no-store',

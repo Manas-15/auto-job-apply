@@ -2,7 +2,7 @@ import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
 import { pinoHttp } from 'pino-http';
-import { corsOrigins } from './config/env.js';
+import { corsOrigins, env } from './config/env.js';
 import { logger } from './lib/logger.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { atsRouter } from './routes/ats.js';
@@ -13,7 +13,9 @@ export function createApp() {
   const app = express();
 
   app.use(helmet());
-  app.use(cors({ origin: corsOrigins }));
+  // In development, reflect any origin so the dashboard works over localhost
+  // AND your LAN IP (e.g. 192.168.x.x:3000). In production, use the allowlist.
+  app.use(cors({ origin: env.NODE_ENV === 'development' ? true : corsOrigins }));
   app.use(express.json({ limit: '2mb' }));
   app.use(pinoHttp({ logger, autoLogging: { ignore: (req) => req.url === '/health' } }));
 
