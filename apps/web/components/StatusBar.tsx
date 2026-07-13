@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
+import { ThemeToggle } from './ThemeToggle';
 
 export function StatusBar() {
   const [health, setHealth] = useState<{ db: string; aiProvider: string } | null>(null);
@@ -31,6 +32,9 @@ export function StatusBar() {
       ) : (
         <span>Connecting…</span>
       )}
+      <div className="ml-auto">
+        <ThemeToggle />
+      </div>
     </div>
   );
 }
