@@ -4,8 +4,36 @@ import { asyncHandler } from '../middleware/errorHandler.js';
 import { prisma } from '../lib/prisma.js';
 import { NotFoundError } from '../lib/errors.js';
 import { analyzeJob } from '../modules/analyzer/service.js';
+import { discoverJobs } from '../modules/finder/service.js';
+import { defaultSourceKeys } from '../modules/finder/sources/index.js';
+import { env } from '../config/env.js';
 
 export const jobsRouter = Router();
+
+// Run the Job Finder now (M1): pull real jobs from free sources.
+const discoverSchema = z.object({
+  query: z.string().min(1).optional(),
+  limit: z.number().int().min(1).max(100).optional(),
+  sources: z.array(z.string()).optional(),
+});
+
+jobsRouter.post(
+  '/discover',
+  asyncHandler(async (req, res) => {
+    const body = discoverSchema.parse(req.body ?? {});
+    const result = await discoverJobs({
+      query: body.query ?? env.JOB_FINDER_QUERY,
+      limit: body.limit ?? env.JOB_FINDER_LIMIT,
+      sourceKeys: body.sources,
+    });
+    res.json(result);
+  }),
+);
+
+// List available job sources.
+jobsRouter.get('/sources', (_req, res) => {
+  res.json({ sources: defaultSourceKeys });
+});
 
 const createJobSchema = z.object({
   title: z.string().min(1),

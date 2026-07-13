@@ -50,6 +50,14 @@ export interface AtsPreview {
   notes: string;
 }
 
+export interface DiscoverResult {
+  query: string;
+  fetched: number;
+  created: number;
+  updated: number;
+  perSource: { source: string; fetched: number; error?: string }[];
+}
+
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
     ...init,
@@ -83,6 +91,8 @@ export const api = {
   }) => req<Job>('/api/jobs', { method: 'POST', body: JSON.stringify(data) }),
   analyzeJob: (id: string) =>
     req<JobAnalysis>(`/api/jobs/${id}/analyze`, { method: 'POST' }),
+  discoverJobs: (data: { query?: string; limit?: number }) =>
+    req<DiscoverResult>('/api/jobs/discover', { method: 'POST', body: JSON.stringify(data) }),
   scoreResume: (resumeId: string, jobId: string) =>
     req<AtsScore>('/api/ats/score', {
       method: 'POST',

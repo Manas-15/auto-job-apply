@@ -44,6 +44,15 @@ const schema = z.object({
   TELEGRAM_BOT_TOKEN: z.string().optional(),
   TELEGRAM_CHAT_ID: z.string().optional(),
 
+  // ── Job Finder (M1) ──
+  JOB_FINDER_ENABLED: z
+    .string()
+    .default('false')
+    .transform((v) => v === 'true'),
+  JOB_FINDER_INTERVAL_MIN: z.coerce.number().default(30),
+  JOB_FINDER_QUERY: z.string().default('react developer'),
+  JOB_FINDER_LIMIT: z.coerce.number().default(25),
+
   AUTO_SUBMIT: z
     .string()
     .default('false')

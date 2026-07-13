@@ -118,7 +118,9 @@ the same interface, so the rest of the app is unchanged:
 | Method | Path                       | Description                                  |
 |--------|----------------------------|----------------------------------------------|
 | GET    | `/health`                  | Service + DB + AI-provider status            |
-| POST   | `/api/jobs`                | Create a job (manual now; scraper feeds later) |
+| POST   | `/api/jobs/discover`       | Job Finder: pull real jobs from free sources |
+| GET    | `/api/jobs/sources`        | List available job sources                   |
+| POST   | `/api/jobs`                | Create a job manually (paste a JD)           |
 | GET    | `/api/jobs`                | List recent jobs                             |
 | GET    | `/api/jobs/:id`            | Job detail (with analysis + scores)          |
 | POST   | `/api/jobs/:id/analyze`    | Run AI Job Analyzer (Module 2)               |
@@ -132,7 +134,8 @@ Mapped to the module plan:
 - [x] **M2** AI Job Analyzer — JD → structured extraction
 - [x] **M4** ATS Score — resume vs JD keyword match
 - [x] **M9** Dashboard (basic) — overview, jobs, job detail, ATS tool
-- [ ] **M1** Job Finder — scheduled scraping (LinkedIn/Naukri/Indeed/…) + filters
+- [x] **M1** Job Finder (free sources) — Remotive + RemoteOK ingest, dedupe, optional BullMQ scheduler
+  - [ ] gated sources (LinkedIn/Naukri/Indeed) behind credentials; preference-driven filters
 - [ ] **M3** Resume Optimizer — AI-tailored, ATS-optimized resume variants
 - [ ] **M5** Cover Letter Generator
 - [ ] **M6** Application Engine — Playwright form fill + approval gate

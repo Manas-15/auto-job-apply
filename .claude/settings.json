@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c ' *)",
+      "Bash(curl -s localhost:3000/jobs -o /dev/null -w \"jobs page HTTP %{http_code}\\\\n\")",
+      "Bash(echo \"exit: $?\")"
+    ]
+  }
+}

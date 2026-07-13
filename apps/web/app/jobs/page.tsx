@@ -10,6 +10,10 @@ export default function JobsPage() {
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [query, setQuery] = useState('react developer');
+  const [discovering, setDiscovering] = useState(false);
+  const [discoverMsg, setDiscoverMsg] = useState<string | null>(null);
+
   const load = () => {
     api
       .listJobs()
@@ -19,17 +23,57 @@ export default function JobsPage() {
 
   useEffect(load, []);
 
+  const discover = async () => {
+    setDiscovering(true);
+    setDiscoverMsg(null);
+    setError(null);
+    try {
+      const r = await api.discoverJobs({ query, limit: 25 });
+      setDiscoverMsg(
+        `Found ${r.fetched} jobs for “${r.query}” — ${r.created} new, ${r.updated} updated.`,
+      );
+      load();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setDiscovering(false);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Jobs</h1>
           <p className="text-sm text-[var(--color-muted)]">
-            Manually added for now — the Job Finder (M1) will feed these automatically.
+            Discover real jobs from free sources, or paste one manually.
           </p>
         </div>
-        <Button onClick={() => setShowForm((v) => !v)}>{showForm ? 'Close' : '+ Add job'}</Button>
+        <Button variant="ghost" onClick={() => setShowForm((v) => !v)}>
+          {showForm ? 'Close' : '+ Add manually'}
+        </Button>
       </div>
+
+      {/* Job Finder (M1) */}
+      <Card className="flex flex-wrap items-center gap-3 p-4">
+        <span className="text-sm font-medium">Discover jobs</span>
+        <input
+          className="min-w-48 flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm outline-none focus:border-[var(--color-brand)]"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="e.g. react developer, frontend, next.js"
+          onKeyDown={(e) => e.key === 'Enter' && discover()}
+        />
+        <Button onClick={discover} disabled={discovering || !query.trim()}>
+          {discovering ? 'Searching…' : 'Search sources'}
+        </Button>
+        <span className="w-full text-xs text-[var(--color-muted)]">
+          Free sources (Remotive, RemoteOK) — no login needed.
+        </span>
+        {discoverMsg && (
+          <span className="w-full text-xs text-[var(--color-good)]">{discoverMsg}</span>
+        )}
+      </Card>
 
       {error && <Card className="p-4 text-sm text-[var(--color-bad)]">{error}</Card>}
 
