@@ -43,6 +43,11 @@ packages/         (planned) shared types
 docker-compose.yml  Postgres + Redis
 ```
 
+## Commands
+
+Start/stop the app + every command with its use case:
+**[COMMANDS.md](COMMANDS.md)**.
+
 ## Deployment
 
 Frontend → Vercel, backend → Railway/Render, DB/Redis → Neon/Upstash, and the
