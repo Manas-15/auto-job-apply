@@ -17,6 +17,25 @@ export function createApp() {
   app.use(express.json({ limit: '2mb' }));
   app.use(pinoHttp({ logger, autoLogging: { ignore: (req) => req.url === '/health' } }));
 
+  // Friendly index so hitting the base URL isn't a bare 404.
+  app.get('/', (_req, res) => {
+    res.json({
+      name: 'Auto Job Apply API',
+      status: 'ok',
+      docs: 'See README.md',
+      dashboard: 'http://localhost:3000',
+      endpoints: [
+        'GET  /health',
+        'GET  /api/jobs',
+        'POST /api/jobs',
+        'GET  /api/jobs/:id',
+        'POST /api/jobs/:id/analyze',
+        'POST /api/ats/score',
+        'POST /api/ats/preview',
+      ],
+    });
+  });
+
   app.use('/health', healthRouter);
   app.use('/api/jobs', jobsRouter);
   app.use('/api/ats', atsRouter);

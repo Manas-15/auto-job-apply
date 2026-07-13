@@ -19,6 +19,7 @@ Foundation + first vertical slice is working:
 - ✅ **Swappable AI provider** abstraction — `gemini` / `ollama` / `openai` / `anthropic`
 - ✅ **Module 2 — AI Job Analyzer**: JD → structured skills/keywords/responsibilities
 - ✅ **Module 4 — ATS Score**: deterministic keyword match, resume vs JD (no AI cost)
+- ✅ **Next.js dashboard**: overview, jobs list + add-job, job detail (analyze + ATS score), standalone ATS tool
 
 See [the roadmap](#roadmap) for what's next.
 
@@ -34,7 +35,10 @@ apps/
       routes/     HTTP endpoints
       lib/        prisma, logger, errors
       config/     validated env
-  web/            (planned) Next.js dashboard
+  web/            Next.js dashboard (App Router, Tailwind v4)
+    app/          overview, jobs, jobs/[id], tools/ats
+    components/   nav, status bar, UI kit
+    lib/          typed API client
 packages/         (planned) shared types
 docker-compose.yml  Postgres + Redis
 ```
@@ -65,9 +69,15 @@ npm run db:generate
 # 5. Seed a demo user, master resume, and sample job
 npm run db:seed --workspace @aja/api
 
-# 6. Run the API (http://localhost:4000)
-npm run dev:api
+# 6. Run everything (API on :4000, dashboard on :3000)
+npm run dev
+#    …or run them separately:
+#    npm run dev:api    # backend  → http://localhost:4000
+#    npm run dev:web    # dashboard → http://localhost:3000
 ```
+
+Then open **http://localhost:3000** for the dashboard. (The API root at
+`:4000` just returns a JSON index — the UI lives on `:3000`.)
 
 ## Try it
 
@@ -121,13 +131,14 @@ Mapped to the module plan:
 
 - [x] **M2** AI Job Analyzer — JD → structured extraction
 - [x] **M4** ATS Score — resume vs JD keyword match
+- [x] **M9** Dashboard (basic) — overview, jobs, job detail, ATS tool
 - [ ] **M1** Job Finder — scheduled scraping (LinkedIn/Naukri/Indeed/…) + filters
 - [ ] **M3** Resume Optimizer — AI-tailored, ATS-optimized resume variants
 - [ ] **M5** Cover Letter Generator
 - [ ] **M6** Application Engine — Playwright form fill + approval gate
 - [ ] **M7** Email Detection — apply-by-email flow
 - [ ] **M8** LinkedIn Easy Apply (policy-permitting)
-- [ ] **M9** Analytics dashboard (Next.js)
+- [ ] **M9** Analytics dashboard — charts, funnel (found→applied→interview→offer)
 - [ ] Auth (JWT + Google), storage (local/S3), Telegram notifications
 - [ ] BullMQ queues + scheduler, match-score gate (auto ≥95 / approve 80–94 / skip <80)
 

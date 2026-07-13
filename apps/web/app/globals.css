@@ -1,0 +1,31 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-bg: #0b0f19;
+  --color-surface: #131826;
+  --color-surface-2: #1a2133;
+  --color-border: #232b3e;
+  --color-muted: #8b95a9;
+  --color-text: #e6e9f0;
+  --color-brand: #6366f1;
+  --color-brand-2: #8b5cf6;
+  --color-good: #22c55e;
+  --color-warn: #f59e0b;
+  --color-bad: #ef4444;
+}
+
+html,
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+* {
+  border-color: var(--color-border);
+}
+
+::selection {
+  background: color-mix(in oklab, var(--color-brand) 40%, transparent);
+}
