@@ -1,41 +1,24 @@
 # Dependencies
 node_modules/
-.pnp.*
-.yarn/*
 
 # Build output
-dist/
-build/
 .next/
 out/
+build/
+dist/
 *.tsbuildinfo
 
 # Environment
 .env
 .env.*
 !.env.example
-!.env.prod.example
-
-# Prisma
-apps/api/prisma/*.db
-apps/api/prisma/migrations/dev.db*
 
 # Logs
-logs/
 *.log
 npm-debug.log*
 
-# Playwright
-test-results/
-playwright-report/
-.playwright/
-browser-sessions/
-
-# Uploads / generated artifacts (local storage)
-storage/
-uploads/
-*.local.pdf
-*.local.docx
+# Docker volumes (if bind-mounted locally)
+.data/
 
 # OS / editor
 .DS_Store
@@ -43,6 +26,3 @@ Thumbs.db
 .idea/
 .vscode/*
 !.vscode/extensions.json
-
-# Docker volumes (if bind-mounted locally)
-.data/

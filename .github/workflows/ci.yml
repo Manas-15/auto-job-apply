@@ -20,18 +20,12 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-        env:
-          # CI only typechecks/builds — no browser needed, skip the ~150MB download.
-          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
 
       - name: Generate Prisma client
-        run: npm run db:generate --workspace @aja/api
+        run: npm run db:generate
 
       - name: Typecheck
         run: npm run typecheck
 
       - name: Build
         run: npm run build
-        env:
-          # Build-time public API URL for the web app (runtime can override).
-          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}

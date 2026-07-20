@@ -1,194 +1,84 @@
-# Auto Job Apply — AI Career Assistant
+# AI Resume Builder & ATS Optimizer
 
-An AI-assisted job application engine: it finds jobs, analyzes the job
-description, scores your resume against it (ATS), tailors resumes, drafts
-cover letters, and — where allowed — helps fill and submit applications,
-keeping you in control with an approval gate.
+Upload/paste your résumé and a job description; the app extracts the ATS
+keywords, scores how well your résumé matches, shows the keyword gap, and can
+rewrite your résumé to fit the job **honestly** — surfacing only experience you
+already have and reporting the rest as gaps rather than inventing skills.
 
-> Designed to run **for free** to start (Gemini free tier or a local Ollama
-> model, Postgres + Redis via Docker), with paid APIs (OpenAI/Claude) as a
-> drop-in upgrade.
+This is the **Phase 1 MVP** of the [Scope of Work](#roadmap).
 
-## Status
+## Stack
 
-Foundation + first vertical slice is working:
+- **Next.js 15** (App Router) — UI **and** API routes in one app
+- **TypeScript**, **Tailwind CSS v4**
+- **PostgreSQL** + **Prisma**
+- **Email/password auth** (bcrypt + JWT in an httpOnly cookie)
+- **AI**: Google **Gemini** (free tier, default); **OpenAI** optional
 
-- ✅ Monorepo (npm workspaces), Docker Compose (Postgres + Redis)
-- ✅ Prisma schema for the full domain (users, resumes, jobs, applications, ATS, cover letters, interviews, preferences…)
-- ✅ Express + TypeScript API with validation, logging, typed errors
-- ✅ **Swappable AI provider** abstraction — `gemini` / `ollama` / `openai` / `anthropic`
-- ✅ **Module 2 — AI Job Analyzer**: JD → structured skills/keywords/responsibilities
-- ✅ **Module 4 — ATS Score**: deterministic keyword match, resume vs JD (no AI cost)
-- ✅ **Next.js dashboard**: overview, jobs list + add-job, job detail (analyze + ATS score), standalone ATS tool
+## Features (MVP)
 
-See [the roadmap](#roadmap) for what's next.
+- User authentication (register / login / logout)
+- Résumé management — save and reuse multiple versions
+- Job-description input
+- ATS analysis — 0–100 match score
+- Keyword gap — matched vs. missing keywords
+- AI résumé rewriter — honest, no fabricated experience, with before/after ATS lift
+- Analysis history
+- Dashboard
 
-## Architecture
-
-```
-apps/
-  api/            Node + Express + TypeScript backend
-    prisma/       schema, migrations, seed
-    src/
-      ai/         provider-agnostic LLM layer (gemini/ollama/openai/anthropic)
-      modules/    analyzer (JD→structured), ats (scoring)
-      routes/     HTTP endpoints
-      lib/        prisma, logger, errors
-      config/     validated env
-  web/            Next.js dashboard (App Router, Tailwind v4)
-    app/          overview, jobs, jobs/[id], tools/ats
-    components/   nav, status bar, UI kit
-    lib/          typed API client
-packages/         (planned) shared types
-docker-compose.yml  Postgres + Redis
-```
-
-## Commands
-
-Start/stop the app + every command with its use case:
-**[COMMANDS.md](COMMANDS.md)**.
-
-## Deployment
-
-Frontend → Vercel, backend → Railway/Render, DB/Redis → Neon/Upstash, and the
-Naukri scraper stays local (it can't run in the cloud). Full guide + CI/CD
-setup: **[DEPLOYMENT.md](DEPLOYMENT.md)**.
-
-## Prerequisites
-
-- Node.js 20+
-- Docker (for Postgres + Redis)
-
-## Setup
+## Getting started
 
 ```bash
 # 1. Install dependencies
 npm install
 
-# 2. Configure env (defaults work out of the box for local dev)
+# 2. Configure environment
 cp .env.example .env
-#    Optional: set GEMINI_API_KEY (free at https://aistudio.google.com/apikey)
-#    to enable the AI Job Analyzer. ATS scoring works without any AI key.
+#   → set GEMINI_API_KEY (https://aistudio.google.com/apikey)
+#   → set a strong JWT_SECRET
 
-# 3. Start Postgres + Redis
-npm run db:up
+# 3. Start Postgres (local) and run migrations
+npm run db:up          # docker compose: postgres on :5432
+npm run db:migrate     # creates the schema
 
-# 4. Create the schema and generate the client
-npm run db:migrate      # first run will prompt for a migration name, e.g. "init"
-npm run db:generate
-
-# 5. Seed a demo user, master resume, and sample job
-npm run db:seed --workspace @aja/api
-
-# 6. Run everything (API on :4000, dashboard on :3000)
-npm run dev
-#    …or run them separately:
-#    npm run dev:api    # backend  → http://localhost:4000
-#    npm run dev:web    # dashboard → http://localhost:3000
+# 4. Run the app
+npm run dev            # http://localhost:3000
 ```
 
-Then open **http://localhost:3000** for the dashboard. (The API root at
-`:4000` just returns a JSON index — the UI lives on `:3000`.)
+## Scripts
 
-## Try it
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Start the dev server on :3000 |
+| `npm run build` | `prisma generate` + `next build` |
+| `npm run start` | Start the production server |
+| `npm run typecheck` | Type-check without emitting |
+| `npm run db:up` | Start local Postgres via Docker |
+| `npm run db:migrate` | Run Prisma migrations (dev) |
+| `npm run db:deploy` | Apply migrations (production) |
+| `npm run db:studio` | Open Prisma Studio |
 
-```bash
-# Health check
-curl localhost:4000/health
+## Deployment (Vercel + Supabase)
 
-# ATS score: paste resume text + JD keywords, get a match score (no AI needed)
-curl -s -X POST localhost:4000/api/ats/preview -H 'Content-Type: application/json' -d '{
-  "resumeText":"5+ years React, Next.js, TypeScript, Redux Toolkit, REST APIs, Jest, React Query",
-  "required":["React","Next.js","TypeScript","REST APIs","Jest","React Query"],
-  "niceToHave":["GraphQL","Webpack","CI/CD"]
-}'
-# → { "score": 75, "matchedKeywords": [...], "missingKeywords": ["GraphQL","Webpack","CI/CD"] }
-
-# With a GEMINI_API_KEY set, analyze a stored job's description into structured data:
-curl -X POST localhost:4000/api/jobs/seed-sample-job/analyze
-
-# Then score the seeded master resume against the analyzed job:
-curl -X POST localhost:4000/api/ats/score -H 'Content-Type: application/json' \
-  -d '{"resumeId":"seed-master-resume","jobId":"seed-sample-job"}'
-```
-
-## Naukri scraping (your own account, session-based)
-
-Scrapes Naukri using **your** login — your password is never typed into this
-app, stored in code, or committed. You sign in yourself in a real browser
-window; only the resulting session cookies are saved locally to
-`browser-sessions/naukri.json` (gitignored).
-
-```bash
-# 1. One-time login — opens a browser window; sign in + solve any CAPTCHA,
-#    then press Enter in the terminal. Session is saved locally.
-npm run naukri:login --workspace @aja/api
-
-# 2. Scrape your matching jobs into the dashboard (reuses the session)
-curl -X POST localhost:4000/api/jobs/scrape/naukri \
-  -H 'Content-Type: application/json' -d '{"query":"react developer","limit":25}'
-```
-
-Re-run the login if the session expires. Scraped jobs land in the same DB and
-show up in the dashboard alongside the free sources.
-
-> ⚠️ **Terms of Service:** Naukri/LinkedIn prohibit automated access in their
-> ToS; automating your own account carries a risk of restriction. This runs
-> locally under your account, rate-limited and human-in-the-loop
-> (`AUTO_SUBMIT=false`), but the risk is yours to weigh. Naukri changes its
-> markup often — if a run returns 0 jobs, a debug screenshot is saved to
-> `browser-sessions/naukri-debug.png` to help re-tune the selectors.
-
-## AI providers
-
-Set `AI_PROVIDER` in `.env` to switch the model backend. All four implement
-the same interface, so the rest of the app is unchanged:
-
-| Provider    | Cost            | Notes                                             |
-|-------------|-----------------|---------------------------------------------------|
-| `gemini`    | Free tier       | `GEMINI_API_KEY` — https://aistudio.google.com/apikey |
-| `ollama`    | Free (local)    | Install Ollama, `ollama pull llama3.1`            |
-| `openai`    | Paid            | `OPENAI_API_KEY`                                  |
-| `anthropic` | Paid            | `ANTHROPIC_API_KEY`                               |
-
-## API endpoints (so far)
-
-| Method | Path                       | Description                                  |
-|--------|----------------------------|----------------------------------------------|
-| GET    | `/health`                  | Service + DB + AI-provider status            |
-| POST   | `/api/jobs/discover`       | Job Finder: pull real jobs from free sources |
-| POST   | `/api/jobs/scrape/naukri`  | Scrape Naukri via your saved login session   |
-| GET    | `/api/jobs/sources`        | List available job sources                   |
-| POST   | `/api/jobs`                | Create a job manually (paste a JD)           |
-| GET    | `/api/jobs`                | List recent jobs                             |
-| GET    | `/api/jobs/:id`            | Job detail (with analysis + scores)          |
-| POST   | `/api/jobs/:id/analyze`    | Run AI Job Analyzer (Module 2)               |
-| POST   | `/api/ats/score`           | Score a stored resume vs an analyzed job     |
-| POST   | `/api/ats/preview`         | Ad-hoc ATS score from pasted text            |
+1. Create a Supabase project and copy its Postgres connection string.
+2. In Vercel, set `DATABASE_URL`, `JWT_SECRET`, `GEMINI_API_KEY`, `AI_PROVIDER=gemini`.
+3. Run `npm run db:deploy` against the Supabase database once (or via a deploy hook).
+4. Deploy — the build runs `prisma generate && next build`.
 
 ## Roadmap
 
-Mapped to the module plan:
+- **Phase 1 (this MVP)** — auth, résumé/JD input, ATS score, keyword gap, AI rewrite, dashboard, history.
+- **Phase 2** — file parsing (pdf-parse, mammoth), PDF/DOCX export (@react-pdf/renderer), recruiter & hiring-manager review.
+- **Phase 3** — cover letters, interview prep, templates, subscriptions.
 
-- [x] **M2** AI Job Analyzer — JD → structured extraction
-- [x] **M4** ATS Score — resume vs JD keyword match
-- [x] **M9** Dashboard (basic) — overview, jobs, job detail, ATS tool
-- [x] **M1** Job Finder (free sources) — Remotive + RemoteOK + Arbeitnow + Jobicy + WeWorkRemotely
-  - [x] **Naukri** — session-based Playwright scraper (you log in yourself; no password stored)
-  - [ ] LinkedIn Easy Apply (where permitted); preference-driven match filtering
-- [ ] **M3** Resume Optimizer — AI-tailored, ATS-optimized resume variants
-- [ ] **M5** Cover Letter Generator
-- [ ] **M6** Application Engine — Playwright form fill + approval gate
-- [ ] **M7** Email Detection — apply-by-email flow
-- [ ] **M8** LinkedIn Easy Apply (policy-permitting)
-- [ ] **M9** Analytics dashboard — charts, funnel (found→applied→interview→offer)
-- [ ] Auth (JWT + Google), storage (local/S3), Telegram notifications
-- [ ] BullMQ queues + scheduler, match-score gate (auto ≥95 / approve 80–94 / skip <80)
+## Project structure
 
-### A note on automation & compliance
-
-Sites like LinkedIn and Naukri may change their pages, add CAPTCHAs, or
-restrict automation in their terms. The design automates everything up to
-final submit, then pauses for your one-click approval (`AUTO_SUBMIT=false`
-by default), and only auto-submits where permitted. Credentials are never
-stored in code; use `.env`/secure storage and browser sessions/OAuth.
+```
+app/
+  (auth)/login, (auth)/register   # standalone auth pages
+  (app)/dashboard|analyze|resumes|history   # authed shell + pages
+  api/                            # route handlers (auth, resumes, analyze, rewrite, analyses)
+components/                       # Nav, AuthForm, AnalysisResult, ui primitives
+lib/                              # auth, prisma, ai (gemini/openai), ats, analyzer, rewrite
+prisma/schema.prisma              # User, Resume, Analysis
+```

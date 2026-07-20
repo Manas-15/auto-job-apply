@@ -36,7 +36,31 @@
       "Bash(docker rm *)",
       "Bash(docker run *)",
       "Bash(curl -s localhost:3999/ -o /dev/null -w \"%{http_code}\\\\n\")",
-      "Bash(curl -s localhost:3999/)"
+      "Bash(curl -s localhost:3999/)",
+      "Bash(curl -s localhost:4000/health)",
+      "Bash(timeout 300 bash -c 'while pgrep -f \"docker.*compose.*up -d --build api\" >/dev/null 2>&1 || pgrep -f \"buildx.*api\" >/dev/null 2>&1; do sleep 8; done; sleep 3')",
+      "Bash(curl -s localhost:3000/ -o /dev/null -w \"localhost:3000 → HTTP %{http_code}\\\\n\")",
+      "Bash(awk '{print \"http://\"$1\":3000\"}')",
+      "Bash(unzip -p \"/home/manasp/Documents/AI_Resume_Builder_Scope_of_Work_SOW.docx\" word/document.xml)",
+      "Bash(python3 -c \"import sys,re; t=sys.stdin.read\\(\\); t=re.sub\\(r'</w:p>','\\\\n',t\\); t=re.sub\\(r'<[^>]+>','',t\\); import html; print\\(html.unescape\\(t\\)\\)\")",
+      "Bash(set -e)",
+      "Bash(mv apps/api/prisma ./prisma)",
+      "Bash(mv apps/web/app ./app)",
+      "Bash(mv apps/web/components ./components)",
+      "Bash(mv apps/web/lib ./lib)",
+      "Bash(cd \"/home/manasp/Manas/Auto Job Apply/auto-job-apply\" && rm -rf app/jobs app/tools app/resumes lib/api.ts components/StatusBar.tsx && echo done && ls app components lib)",
+      "Read(//home/manasp/.nvm/versions/node/**)",
+      "Bash(command -v nvm)",
+      "Bash(awk -F= '/^GEMINI_API_KEY=/{v=$2; gsub\\(/[[:space:]]/,\"\",v\\); print \"GEMINI_API_KEY length:\", length\\(v\\)}' .env)",
+      "Bash(awk -F= '/^AI_PROVIDER=/{print \"AI_PROVIDER:\", $2}' .env)",
+      "Bash(pkill -9 -f \"next start -p 3100\")",
+      "Bash(curl -s -o /dev/null -w \"me: HTTP %{http_code}\\\\n\" localhost:3100/api/auth/me)",
+      "Bash(curl -s -o /dev/null -w \"me=%{http_code}\\\\n\" localhost:3100/api/auth/me)",
+      "Bash(kill 202651)",
+      "Bash(kill -9 223287)"
+    ],
+    "additionalDirectories": [
+      "/home/manasp/Manas/Auto Job Apply/auto-job-apply/app/jobs"
     ]
   }
 }

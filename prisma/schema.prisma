@@ -1,0 +1,94 @@
+// AI Resume Builder & ATS Optimizer — data model (Phase 1 MVP)
+// Docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────
+// User (email/password auth)
+// ─────────────────────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  resumes  Resume[]
+  analyses Analysis[]
+}
+
+// ─────────────────────────────────────────────────────────────
+// Résumé versions (Module 2 — Resume Management)
+// ─────────────────────────────────────────────────────────────
+
+model Resume {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  label      String // e.g. "Master", "Senior Frontend", "Tailored — Acme"
+  content    String // plain-text résumé the AI reads / scores against
+  isTailored Boolean  @default(false)
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  analyses   Analysis[]
+
+  @@index([userId])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Analysis — one ATS run of a résumé against a job description.
+// Holds ATS score + keyword gap (Modules 5/6) and, once the user
+// runs the rewriter (Module 9), the optimized résumé too. Doubles
+// as the Analysis History record (Module 13).
+// ─────────────────────────────────────────────────────────────
+
+model Analysis {
+  id       String  @id @default(cuid())
+  userId   String
+  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resumeId String?
+  resume   Resume? @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+
+  // Inputs (snapshotted so history survives résumé edits/deletes).
+  jobTitle   String?
+  jobText    String
+  resumeText String
+
+  // JD extraction (analyzer).
+  requiredSkills   String[] @default([])
+  niceToHaveSkills String[] @default([])
+  atsKeywords      String[] @default([])
+  jdSummary        String?
+
+  // ATS result (Modules 5/6).
+  atsScore        Int // 0–100
+  matchedKeywords String[] @default([])
+  missingKeywords String[] @default([])
+  notes           String?
+
+  // AI rewrite (Module 9), filled in when the user optimizes.
+  rewrittenText  String?
+  changesSummary String[] @default([])
+  addedKeywords  String[] @default([])
+  gaps           Json     @default("[]") // [{ keyword, note }]
+  atsScoreAfter  Int?
+  model          String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}

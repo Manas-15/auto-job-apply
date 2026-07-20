@@ -1,36 +1,17 @@
+# Local Postgres for development. `npm run db:up` starts it.
+# In production, point DATABASE_URL at a managed Postgres (e.g. Supabase).
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: aja-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: aja
       POSTGRES_PASSWORD: aja
-      POSTGRES_DB: auto_job_apply
+      POSTGRES_DB: resume_builder
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
-      - aja-pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U aja -d auto_job_apply"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
-  redis:
-    image: redis:7-alpine
-    container_name: aja-redis
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-    volumes:
-      - aja-redisdata:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
+      - pgdata:/var/lib/postgresql/data
 
 volumes:
-  aja-pgdata:
-  aja-redisdata:
+  pgdata:

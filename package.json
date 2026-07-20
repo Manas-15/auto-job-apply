@@ -1,28 +1,45 @@
 {
-  "name": "auto-job-apply",
+  "name": "ai-resume-builder",
   "version": "0.1.0",
   "private": true,
-  "description": "AI Career Assistant — finds jobs, analyzes JDs, tailors resumes, scores ATS fit, generates cover letters, and (optionally) applies.",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
+  "description": "AI Resume Builder & ATS Optimizer — analyze a résumé against a job description, score ATS fit, find keyword gaps, and rewrite honestly.",
   "engines": {
     "node": ">=20"
   },
   "scripts": {
-    "dev": "npm run dev:api & npm run dev:web & wait",
-    "dev:api": "npm run dev --workspace @aja/api",
-    "dev:web": "npm run dev --workspace @aja/web",
-    "build": "npm run build --workspaces --if-present",
-    "lint": "npm run lint --workspaces --if-present",
-    "typecheck": "npm run typecheck --workspaces --if-present",
-    "db:up": "docker compose up -d postgres redis",
-    "db:down": "docker compose down",
-    "db:migrate": "npm run db:migrate --workspace @aja/api",
-    "db:generate": "npm run db:generate --workspace @aja/api",
-    "db:studio": "npm run db:studio --workspace @aja/api",
-    "naukri:login": "npm run naukri:login --workspace @aja/api"
+    "dev": "next dev -p 3000",
+    "build": "prisma generate && next build",
+    "start": "next start -p 3000",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:studio": "prisma studio",
+    "db:up": "docker compose up -d postgres"
   },
-  "license": "MIT"
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.2.1",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "next": "^15.1.6",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.0.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/node": "^20.17.12",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
+    "prisma": "^6.2.1",
+    "tailwindcss": "^4.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
 }
